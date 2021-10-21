@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">允许USB调试</string>
+    <string name="des">自动点击充电提醒取消按钮,USB调试自动同意</string>
+</resources>
