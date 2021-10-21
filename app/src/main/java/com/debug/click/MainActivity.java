@@ -20,8 +20,8 @@ import java.io.InputStreamReader;
  * @author M
  */
 public class MainActivity extends AppCompatActivity {
-    static TextView textView;
-
+     TextView textView;
+     String TAG=this.getClass().getSimpleName();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,13 +47,12 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.do_command).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                EditText commandEdt = findViewById(R.id.command);
                 ExeCommand exeCommand = new ExeCommand();
-                //exeCommand.run(commandEdt.getText().toString(),1000);
-                String abc=exeCommand.run("su", 2000)
+                String result=exeCommand.run("su", 2000)
                         .run("setprop service.adb.tcp.port 5555", 2000)
                         .run("stop adbd", 2000)
                         .run("start adbd", 2000).getResult();
+                Log.i(TAG,result);
             }
         });
 
@@ -79,16 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        //super.onBackPressed();
         moveTaskToBack(true);
     }
 
-    public static void setText(String txt) {
-        try {
-            textView.setText(textView.getText().toString() + "\n" + txt);
-        } catch (Exception e) {
-
-        }
-
-    }
 }
