@@ -65,7 +65,7 @@ public class ExeCommand {
         Lock readLock = lock.readLock();
         readLock.lock();
         try {
-            Log.i("auto", "getResult");
+//            Log.i("auto", "getResult");
             return new String(result);
         } finally {
             readLock.unlock();
@@ -82,7 +82,7 @@ public class ExeCommand {
      * @return this
      */
     public ExeCommand run(String command, final int maxTime) {
-        Log.i("auto", "run command:" + command + ",maxtime:" + maxTime);
+//        Log.i("auto", "run command:" + command + ",maxtime:" + maxTime);
         if (command == null || command.length() == 0) {
             return this;
         }
@@ -119,9 +119,9 @@ public class ExeCommand {
                         }
                         try {
                             int ret = process.exitValue();
-                            Log.i("auto", "exitValue Stream over"+ret);
+//                            Log.i("auto", "exitValue Stream over"+ret);
                         } catch (IllegalThreadStateException e) {
-                            Log.i("auto", "take maxTime,forced to destroy process");
+//                            Log.i("auto", "take maxTime,forced to destroy process");
                             process.destroy();
                         }
                     }
@@ -142,13 +142,13 @@ public class ExeCommand {
                             writeLock.unlock();
                         }
                     } catch (Exception e) {
-                        Log.i("auto", "read InputStream exception:" + e.toString());
+//                        Log.i("auto", "read InputStream exception:" + e.toString());
                     } finally {
                         try {
                             successResult.close();
-                            Log.i("auto", "read InputStream over");
+//                            Log.i("auto", "read InputStream over");
                         } catch (Exception e) {
-                            Log.i("auto", "close InputStream exception:" + e.toString());
+//                            Log.i("auto", "close InputStream exception:" + e.toString());
                         }
                     }
                 }
@@ -169,13 +169,13 @@ public class ExeCommand {
                             writeLock.unlock();
                         }
                     } catch (Exception e) {
-                        Log.i("auto", "read ErrorStream exception:" + e.toString());
+//                        Log.i("auto", "read ErrorStream exception:" + e.toString());
                     } finally {
                         try {
                             errorResult.close();
-                            Log.i("auto", "read ErrorStream over");
+//                            Log.i("auto", "read ErrorStream over");
                         } catch (Exception e) {
-                            Log.i("auto", "read ErrorStream exception:" + e.toString());
+//                            Log.i("auto", "read ErrorStream exception:" + e.toString());
                         }
                     }
                 }
@@ -194,19 +194,19 @@ public class ExeCommand {
 
                     } finally {
                         bRunning = false;
-                        Log.i("auto", "run command process end");
+//                        Log.i("auto", "run command process end");
                     }
                 }
             });
             t3.start();
 
             if (bSynchronous) {
-                Log.i("auto", "run is go to end");
+//                Log.i("auto", "run is go to end");
                 t3.join();
-                Log.i("auto", "run is end");
+//                Log.i("auto", "run is end");
             }
         } catch (Exception e) {
-            Log.i("auto", "run command process exception:" + e.toString());
+//            Log.i("auto", "run command process exception:" + e.toString());
         }
         return this;
     }

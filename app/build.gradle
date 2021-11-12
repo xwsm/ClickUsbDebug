@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
-
+apply plugin: 'com.yanzhenjie.andserver'
 android {
-    compileSdkVersion 31
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId "com.debug.click"
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
@@ -26,5 +26,11 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation'org.nanohttpd:nanohttpd:2.2.0'
+    implementation 'top.zibin:Luban:1.1.8'
+    implementation 'com.github.nanchen2251:CompressHelper:1.0.5'
+    implementation 'com.yanzhenjie.andserver:api:2.1.9'
+    annotationProcessor 'com.yanzhenjie.andserver:processor:2.1.9'
+
 }
