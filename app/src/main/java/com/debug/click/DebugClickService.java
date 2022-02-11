@@ -2,6 +2,8 @@ package com.debug.click;
 
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;

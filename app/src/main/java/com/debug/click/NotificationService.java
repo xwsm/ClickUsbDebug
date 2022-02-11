@@ -6,23 +6,35 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.Uri;
+import android.net.wifi.WifiManager;
+import android.os.BatteryManager;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.ResultReceiver;
+import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.debug.click.net.NetworkChangeReceiver;
 import com.debug.click.service.SwipeEvent;
 import com.nanchen.compresshelper.CompressHelper;
 import com.yanzhenjie.andserver.AndServer;
@@ -31,9 +43,11 @@ import com.yanzhenjie.andserver.framework.body.FileBody;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class NotificationService extends Service {
     @Nullable
@@ -74,9 +88,138 @@ public class NotificationService extends Service {
             e.printStackTrace();
             Log.i("ABCD", "NotificationService ex：" + e.getMessage());
         }
+//        usbStatus();
+        // 注册
+        NetworkChangeReceiver.registerReceiver(this);
+        NetworkChangeReceiver.registerObserver(new NetworkChangeReceiver.NetStateChangeObserver() {
+            @Override
+            public void onDisconnect() {
+                Log.i("ABCD","onDisconnect");
+                WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                int status=wifiManager.getWifiState();
+                if (status == WifiManager.WIFI_STATE_ENABLED ) {
+                    Log.i("ABCD","WIFI_STATE_ENABLED");
+                }else {
+                    String result = new ExeCommand().run("svc wifi enable", 1000).getResult();
+
+                }
+            }
+
+            @Override
+            public void onMobileConnect() {
+                Log.i("ABCD","onMobileConnect");
+            }
+
+            @Override
+            public void onWifiConnect() {
+                Log.i("ABCD","onWifiConnect");
+            }
+        });
+
+
 
     }
+    private final static String USB_ACTION = "android.hardware.usb.action.USB_STATE";
 
+    private void usbStatus() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        filter.addAction(Intent.ACTION_BATTERY_LOW);
+        filter.addAction(Intent.ACTION_BATTERY_OKAY);
+        filter.addAction(Intent.ACTION_POWER_CONNECTED);
+        filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+        filter.addAction(USB_ACTION);
+        registerReceiver(mBroadcastReceiver, filter);
+
+        registerReceiver(mBroadcastReceiver, new IntentFilter(USB_ACTION));
+
+    }
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch (action) {
+                case USB_ACTION:
+                    boolean connected = intent.getExtras().getBoolean("connected");
+                    if (connected) {
+                        displayMsg("USB已连接");
+                    } else {
+                        displayMsg("USB未连接");
+                    }
+                    break;
+
+                case Intent.ACTION_BATTERY_CHANGED:
+                    //电量发生改变。
+                    displayMsg("电量发生改变");
+
+                    boolean isCharging = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) != 0;
+                    if (isCharging) {
+                        //剩余电量。
+                        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+
+                        //电量最大值。
+                        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+                        //电量百分比。
+                        float batteryPct = level / (float) scale;
+                        displayMsg("充电," + level + "-" + batteryPct + "-" + scale);
+                    }
+                    break;
+
+                case Intent.ACTION_BATTERY_LOW:
+                    displayMsg("电量过低");
+                    break;
+
+                case Intent.ACTION_BATTERY_OKAY:
+                    displayMsg("电量满");
+                    break;
+
+                case Intent.ACTION_POWER_CONNECTED:
+                    displayMsg("电源接通");
+                    break;
+
+                case Intent.ACTION_POWER_DISCONNECTED:
+                    displayMsg("电源断开");
+                    break;
+            }
+        }
+    };
+
+    private void displayMsg(String s) {
+        Log.i("ABCD",s);
+    }
+
+    private void createWifiHotspot(){
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d("MainActivity","Android 8.0及以上");
+            if(!Settings.System.canWrite(this)){
+                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getApplicationContext().startActivity(intent);
+            }
+            else{
+                setWifiApEnabledForAndroid_O();
+            }
+            return;
+        }
+        Log.d("MainActivity","Android 8.0及以下");
+    }
+    public void setWifiApEnabledForAndroid_O(){
+        ConnectivityManager connManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        Field iConnMgrField;
+        try{
+            iConnMgrField = connManager.getClass().getDeclaredField("mService");
+            iConnMgrField.setAccessible(true);
+            Object iConnMgr = iConnMgrField.get(connManager);
+            Class<?> iConnMgrClass = Class.forName(iConnMgr.getClass().getName());
+            Method startTethering = iConnMgrClass.getMethod("startTethering",int.class, ResultReceiver.class,boolean.class);
+            startTethering.invoke(iConnMgr,0,null,true);
+            Toast.makeText(getApplicationContext(),"热点创建成功",Toast.LENGTH_SHORT).show();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
     int port = 9999;
     Server server;
 
@@ -152,6 +295,8 @@ public class NotificationService extends Service {
         Intent localIntent = new Intent();
         localIntent.setClass(this, NotificationService.class);
         this.startService(localIntent);
+        NetworkChangeReceiver.unRegisterReceiver(this);
+
         super.onDestroy();
     }
 
@@ -199,6 +344,7 @@ public class NotificationService extends Service {
         return !mKeyguardManager.inKeyguardRestrictedInputMode();
 
     }
+
     public static int getStatusBarHeight(Context context) {
         Class<?> c = null;
         Object obj = null;
